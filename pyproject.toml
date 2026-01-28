@@ -1,6 +1,6 @@
 [project]
 name = "nanobanana-py"
-version = "0.2.2"
+version = "0.2.3"
 description = "Python MCP server for AI-powered image generation using Google Gemini models - A complete port of nanobanana"
 readme = "README.md"
 license = "MIT"
