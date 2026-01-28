@@ -502,7 +502,7 @@ generate_diagram(
 生成圖片會儲存到：
 
 1. `NANOBANANA_OUTPUT_DIR` 環境變數指定的目錄（如有設定）
-2. 目前工作目錄（預設）
+2. 目前工作目錄下的 `nanobanana-output/` 子目錄（預設）
 
 ---
 

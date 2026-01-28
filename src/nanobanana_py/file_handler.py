@@ -15,8 +15,8 @@ def get_output_directory() -> Path:
     if output_dir:
         path = Path(output_dir)
     else:
-        # 預設使用當前目錄
-        path = Path.cwd()
+        # 預設使用當前目錄下的 nanobanana-output 子目錄
+        path = Path.cwd() / "nanobanana-output"
 
     path.mkdir(parents=True, exist_ok=True)
     return path
