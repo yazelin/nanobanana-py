@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[oc]
+*.pyc
+.venv/
+
+# Build
+build/
+dist/
+wheels/
+*.egg-info/
+
+# Generated images (test outputs)
+*.jpg
+*.png
+*.jpeg
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
