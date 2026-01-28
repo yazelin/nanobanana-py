@@ -282,6 +282,8 @@ class ImageGenerator:
     def _is_valid_base64(self, data: str) -> bool:
         """檢查是否為有效的 base64"""
         import re
+        if not data:
+            return False
         return bool(re.match(r"^[A-Za-z0-9+/]*={0,2}$", data))
 
     def _convert_image_format(

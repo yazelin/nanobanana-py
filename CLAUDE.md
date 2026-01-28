@@ -77,17 +77,42 @@ bash -c "set -a && source /home/ct/SDD/ching-tech-os/.env && set +a && uv run py
 }
 ```
 
+## 測試
+
+修改程式碼後，必須確保所有測試通過：
+
+```bash
+cd ~/SDD/nanobanana-py
+uv run pytest tests/ -v
+```
+
+**重要**：
+- 所有測試必須通過才能 commit/發佈
+- 新增功能時應同步新增對應的測試
+- CI/CD 會自動執行測試，失敗會阻擋發佈
+
+測試結構：
+```
+tests/
+├── conftest.py                  # 共用 fixtures
+├── test_types.py                # 型別定義測試
+├── test_file_handler.py         # 檔案處理測試
+├── test_icon_processor.py       # Icon 處理測試
+├── test_image_generator.py      # 認證/超時測試
+└── test_image_generator_mock.py # 圖片生成邏輯測試（模擬 API）
+```
+
 ## 發佈流程
 
 ### 1. 修改程式碼並測試
 
 ```bash
-# 語法檢查
+# 執行測試
 cd ~/SDD/nanobanana-py
-uv run python -c "from nanobanana_py.server import mcp; print('OK')"
+uv run pytest tests/ -v
 
-# 功能測試
-bash -c "set -a && source /home/ct/SDD/ching-tech-os/.env && set +a && uv run python /tmp/test_script.py"
+# 語法檢查
+uv run python -c "from nanobanana_py.server import mcp; print('OK')"
 ```
 
 ### 2. 更新版本號
