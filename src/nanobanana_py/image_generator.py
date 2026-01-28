@@ -218,8 +218,11 @@ class ImageGenerator:
                     response = await client.post(url, json=request_body)
 
                     if response.status_code != 200:
-                        error_data = response.json()
-                        error_message = error_data.get("error", {}).get("message", response.text)
+                        try:
+                            error_data = response.json()
+                            error_message = error_data.get("error", {}).get("message", response.text)
+                        except ValueError:
+                            error_message = response.text or f"HTTP {response.status_code}"
                         last_error = RuntimeError(f"API Error {response.status_code}: {error_message}")
                         model_errors[model_name] = f"API {response.status_code}: {error_message}"
                         logger.warning(f"Model {model_name} failed: {error_message}")
