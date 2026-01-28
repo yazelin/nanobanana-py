@@ -40,7 +40,7 @@ bash -c "set -a && source /home/ct/SDD/ching-tech-os/.env && set +a && uv run py
 | `NANOBANANA_MODEL` | 主要模型 | `gemini-2.5-flash-image` |
 | `NANOBANANA_FALLBACK_MODELS` | 備用模型列表（逗號分隔） | `gemini-2.5-flash-image,gemini-2.0-flash-exp-image-generation` |
 | `NANOBANANA_TIMEOUT` | API 超時秒數 | `60` |
-| `NANOBANANA_OUTPUT_DIR` | 輸出目錄 | 當前目錄 |
+| `NANOBANANA_OUTPUT_DIR` | 輸出目錄 | `{cwd}/nanobanana-output/` |
 | `NANOBANANA_DEBUG` | 啟用 debug 輸出 | (空) |
 
 ## MCP 配置
