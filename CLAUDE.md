@@ -136,7 +136,7 @@ git commit -m "feat: 功能描述
 Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 
 # Push
-git push origin master
+git push origin main
 ```
 
 ### 4. 建立 Tag 並 Push
