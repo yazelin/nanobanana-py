@@ -118,6 +118,10 @@ async def generate_image(
             "message": response.message,
             "generatedFiles": response.generated_files,
             **({"error": response.error} if response.error else {}),
+            # Fallback 資訊
+            **({"modelUsed": response.model_used} if response.model_used else {}),
+            **({"usedFallback": response.used_fallback} if response.used_fallback else {}),
+            **({"primaryModel": response.primary_model} if response.primary_model else {}),
         })
 
     except Exception as e:
@@ -170,6 +174,9 @@ async def edit_image(
             "message": response.message,
             "generatedFiles": response.generated_files,
             **({"error": response.error} if response.error else {}),
+            **({"modelUsed": response.model_used} if response.model_used else {}),
+            **({"usedFallback": response.used_fallback} if response.used_fallback else {}),
+            **({"primaryModel": response.primary_model} if response.primary_model else {}),
         })
 
     except Exception as e:
@@ -222,6 +229,9 @@ async def restore_image(
             "message": response.message,
             "generatedFiles": response.generated_files,
             **({"error": response.error} if response.error else {}),
+            **({"modelUsed": response.model_used} if response.model_used else {}),
+            **({"usedFallback": response.used_fallback} if response.used_fallback else {}),
+            **({"primaryModel": response.primary_model} if response.primary_model else {}),
         })
 
     except Exception as e:
@@ -324,6 +334,9 @@ async def generate_icon(
             "message": response.message,
             "generatedFiles": response.generated_files,
             **({"error": response.error} if response.error else {}),
+            **({"modelUsed": response.model_used} if response.model_used else {}),
+            **({"usedFallback": response.used_fallback} if response.used_fallback else {}),
+            **({"primaryModel": response.primary_model} if response.primary_model else {}),
         })
 
     except Exception as e:
@@ -395,6 +408,9 @@ async def generate_pattern(
             "message": response.message,
             "generatedFiles": response.generated_files,
             **({"error": response.error} if response.error else {}),
+            **({"modelUsed": response.model_used} if response.model_used else {}),
+            **({"usedFallback": response.used_fallback} if response.used_fallback else {}),
+            **({"primaryModel": response.primary_model} if response.primary_model else {}),
         })
 
     except Exception as e:
@@ -465,6 +481,9 @@ async def generate_story(
             "message": response.message,
             "generatedFiles": response.generated_files,
             **({"error": response.error} if response.error else {}),
+            **({"modelUsed": response.model_used} if response.model_used else {}),
+            **({"usedFallback": response.used_fallback} if response.used_fallback else {}),
+            **({"primaryModel": response.primary_model} if response.primary_model else {}),
         })
 
     except Exception as e:
@@ -536,6 +555,9 @@ async def generate_diagram(
             "message": response.message,
             "generatedFiles": response.generated_files,
             **({"error": response.error} if response.error else {}),
+            **({"modelUsed": response.model_used} if response.model_used else {}),
+            **({"usedFallback": response.used_fallback} if response.used_fallback else {}),
+            **({"primaryModel": response.primary_model} if response.primary_model else {}),
         })
 
     except Exception as e:

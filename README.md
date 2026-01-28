@@ -16,6 +16,7 @@ A complete port of [nanobanana](https://github.com/doggy8088/nanobanana) (TypeSc
   - `generate_diagram` - Technical diagrams and flowcharts
 
 - **Dual Model Support**: Flash (fast) and Pro (high quality)
+- **Auto Fallback**: Automatically switches to backup model on timeout/error
 - **Batch Generation**: Generate multiple variations in parallel
 - **Reference Images**: Use existing images as references
 - **Multiple Resolutions**: 1K, 2K, 4K output options
@@ -56,11 +57,31 @@ export NANOBANANA_GEMINI_API_KEY="your-api-key-here"
 # Use a different model (default: gemini-2.5-flash-image)
 export NANOBANANA_MODEL="gemini-3-pro-image-preview"
 
+# Fallback models (comma-separated, used when primary model fails)
+export NANOBANANA_FALLBACK_MODELS="gemini-2.5-flash-image,gemini-2.0-flash-exp-image-generation"
+
+# API timeout in seconds (default: 60)
+export NANOBANANA_TIMEOUT="90"
+
 # Set custom output directory
 export NANOBANANA_OUTPUT_DIR="/path/to/output"
 
 # Enable debug logging
 export NANOBANANA_DEBUG="1"
+```
+
+### Model Fallback
+
+When the primary model fails (timeout, overload, or error), nanobanana-py automatically tries the next model in the fallback chain. The response includes fallback information:
+
+```json
+{
+  "success": true,
+  "message": "Successfully generated 1 image (使用備用模型: gemini-2.5-flash-image，原本: gemini-3-pro-image-preview)",
+  "modelUsed": "gemini-2.5-flash-image",
+  "usedFallback": true,
+  "primaryModel": "gemini-3-pro-image-preview"
+}
 ```
 
 ### Claude Code Integration

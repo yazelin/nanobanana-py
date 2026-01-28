@@ -48,6 +48,10 @@ class ImageGenerationResponse(BaseModel):
     message: str
     generated_files: list[str] = Field(default_factory=list)
     error: str | None = None
+    # Fallback 資訊
+    model_used: str | None = None  # 實際使用的模型
+    used_fallback: bool = False  # 是否使用了 fallback 模型
+    primary_model: str | None = None  # 原本設定的主要模型（當 used_fallback=True 時）
 
 
 class AuthConfig(BaseModel):

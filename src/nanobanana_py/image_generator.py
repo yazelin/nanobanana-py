@@ -35,6 +35,24 @@ DEFAULT_RESOLUTION: ImageResolution = "1K"
 DEFAULT_PARALLEL = 2
 DEFAULT_TIMEOUT = 60.0  # 秒
 
+# Fallback 模型列表（按優先順序）
+# 可透過 NANOBANANA_FALLBACK_MODELS 環境變數自訂，用逗號分隔
+DEFAULT_FALLBACK_MODELS = [
+    "gemini-2.5-flash-image",  # 穩定版本
+    "gemini-2.0-flash-exp-image-generation",  # 實驗版本
+]
+
+
+def get_timeout() -> float:
+    """取得 API 超時設定（秒）"""
+    timeout_str = os.getenv("NANOBANANA_TIMEOUT")
+    if timeout_str:
+        try:
+            return float(timeout_str)
+        except ValueError:
+            logger.warning(f"Invalid NANOBANANA_TIMEOUT value: {timeout_str}, using default {DEFAULT_TIMEOUT}")
+    return DEFAULT_TIMEOUT
+
 
 def debug(*args: Any) -> None:
     """Debug 輸出（僅在 NANOBANANA_DEBUG 環境變數設定時輸出）"""
@@ -73,11 +91,32 @@ class ImageGenerator:
 
         self.api_key = auth_config.api_key
         self.model_name = os.getenv("NANOBANANA_MODEL", DEFAULT_MODEL)
-        debug(f"DEBUG - Using image model: {self.model_name}")
 
-    async def _call_gemini_api(
+        # 初始化 fallback 模型列表
+        fallback_env = os.getenv("NANOBANANA_FALLBACK_MODELS")
+        if fallback_env:
+            self.fallback_models = [m.strip() for m in fallback_env.split(",") if m.strip()]
+        else:
+            self.fallback_models = DEFAULT_FALLBACK_MODELS.copy()
+
+        # 確保主要模型在 fallback 列表的最前面
+        if self.model_name not in self.fallback_models:
+            self.fallback_models.insert(0, self.model_name)
+        elif self.fallback_models[0] != self.model_name:
+            self.fallback_models.remove(self.model_name)
+            self.fallback_models.insert(0, self.model_name)
+
+        # 超時設定
+        self.timeout = get_timeout()
+
+        debug(f"DEBUG - Primary model: {self.model_name}")
+        debug(f"DEBUG - Fallback chain: {' -> '.join(self.fallback_models)}")
+        debug(f"DEBUG - Timeout: {self.timeout}s")
+
+    def _build_request_body(
         self,
         prompt: str,
+        model_name: str,
         resolution: ImageResolution | None = None,
         aspect_ratio: str | None = None,
         input_image_base64: str | None = None,
@@ -85,9 +124,7 @@ class ImageGenerator:
         seed: int | None = None,
         reference_images_data: list[dict[str, str]] | None = None,
     ) -> dict[str, Any]:
-        """呼叫 Gemini REST API"""
-        url = f"{API_BASE_URL}/{self.model_name}:generateContent?key={self.api_key}"
-
+        """建立 API 請求 body"""
         # 建立 parts
         parts: list[dict[str, Any]] = [{"text": prompt}]
 
@@ -113,7 +150,7 @@ class ImageGenerator:
         # 建立 generationConfig
         # gemini-2.5-flash-image: 只支援 aspectRatio
         # gemini-3-pro-image-preview: 支援 aspectRatio 和 imageSize (1K/2K/4K)
-        is_gemini3 = "gemini-3" in self.model_name
+        is_gemini3 = "gemini-3" in model_name
 
         image_config: dict[str, Any] = {}
         if aspect_ratio:
@@ -129,7 +166,7 @@ class ImageGenerator:
         if seed is not None:
             generation_config["seed"] = seed
 
-        request_body = {
+        return {
             "contents": [
                 {
                     "role": "user",
@@ -139,17 +176,83 @@ class ImageGenerator:
             "generationConfig": generation_config,
         }
 
-        debug(f"DEBUG - REST API URL: {url.replace(self.api_key, '[REDACTED]')}")
+    async def _call_gemini_api(
+        self,
+        prompt: str,
+        resolution: ImageResolution | None = None,
+        aspect_ratio: str | None = None,
+        input_image_base64: str | None = None,
+        input_image_mime_type: str | None = None,
+        seed: int | None = None,
+        reference_images_data: list[dict[str, str]] | None = None,
+    ) -> tuple[dict[str, Any], str, bool]:
+        """呼叫 Gemini REST API（帶 fallback 機制）
 
-        async with httpx.AsyncClient(timeout=DEFAULT_TIMEOUT) as client:
-            response = await client.post(url, json=request_body)
+        Returns:
+            tuple: (response_data, model_used, used_fallback)
+        """
+        last_error: Exception | None = None
+        primary_model = self.fallback_models[0]
 
-            if response.status_code != 200:
-                error_data = response.json()
-                error_message = error_data.get("error", {}).get("message", response.text)
-                raise RuntimeError(f"API Error {response.status_code}: {error_message}")
+        for model_name in self.fallback_models:
+            url = f"{API_BASE_URL}/{model_name}:generateContent?key={self.api_key}"
+            request_body = self._build_request_body(
+                prompt=prompt,
+                model_name=model_name,
+                resolution=resolution,
+                aspect_ratio=aspect_ratio,
+                input_image_base64=input_image_base64,
+                input_image_mime_type=input_image_mime_type,
+                seed=seed,
+                reference_images_data=reference_images_data,
+            )
 
-            return response.json()
+            debug(f"DEBUG - Trying model: {model_name}")
+            debug(f"DEBUG - REST API URL: {url.replace(self.api_key, '[REDACTED]')}")
+
+            try:
+                async with httpx.AsyncClient(timeout=self.timeout) as client:
+                    response = await client.post(url, json=request_body)
+
+                    if response.status_code != 200:
+                        error_data = response.json()
+                        error_message = error_data.get("error", {}).get("message", response.text)
+                        last_error = RuntimeError(f"API Error {response.status_code}: {error_message}")
+                        logger.warning(f"Model {model_name} failed: {error_message}")
+                        continue
+
+                    result = response.json()
+
+                    # 檢查是否有有效的圖片資料
+                    candidates = result.get("candidates", [])
+                    if candidates:
+                        content = candidates[0].get("content", {})
+                        parts = content.get("parts", [])
+                        has_image = any("inlineData" in part for part in parts)
+                        if has_image:
+                            used_fallback = model_name != primary_model
+                            if used_fallback:
+                                logger.info(f"Fallback 成功：使用 {model_name} 生成圖片（原本：{primary_model}）")
+                            return result, model_name, used_fallback
+
+                    # 沒有圖片資料，嘗試下一個模型
+                    last_error = RuntimeError("No image data in response")
+                    logger.warning(f"Model {model_name} returned no image data")
+                    continue
+
+            except httpx.TimeoutException as e:
+                last_error = e
+                logger.warning(f"Model {model_name} timeout: {e}")
+                continue
+            except httpx.RequestError as e:
+                last_error = e
+                logger.warning(f"Model {model_name} request error: {e}")
+                continue
+
+        # 所有模型都失敗
+        raise RuntimeError(
+            f"All models failed. Last error: {last_error}"
+        ) from last_error
 
     def _extract_image_from_response(self, response: dict[str, Any]) -> tuple[bytes, str] | None:
         """從 API 回應中提取圖片"""
@@ -261,7 +364,7 @@ class ImageGenerator:
         debug(f"DEBUG - Generating variation {index + 1}: {prompt}")
 
         try:
-            response = await self._call_gemini_api(
+            response, model_used, used_fallback = await self._call_gemini_api(
                 prompt=prompt,
                 resolution=request.resolution,
                 aspect_ratio=request.aspect_ratio,
@@ -297,7 +400,12 @@ class ImageGenerator:
             file_path = save_image_buffer(image_data, output_dir, filename)  # type: ignore
             debug(f"DEBUG - Image saved to: {file_path}")
 
-            return {"success": True, "file_path": file_path}
+            return {
+                "success": True,
+                "file_path": file_path,
+                "model_used": model_used,
+                "used_fallback": used_fallback,
+            }
 
         except Exception as e:
             error_msg = str(e)
@@ -344,6 +452,8 @@ class ImageGenerator:
 
             generated_files: list[str] = []
             first_error: str | None = None
+            model_used: str | None = None
+            used_fallback: bool = False
 
             # 批次處理
             for i in range(0, len(prompts), parallel_count):
@@ -365,6 +475,10 @@ class ImageGenerator:
                 for result in results:
                     if result["success"] and result.get("file_path"):
                         generated_files.append(result["file_path"])
+                        # 記錄 fallback 資訊（取第一個成功的結果）
+                        if model_used is None:
+                            model_used = result.get("model_used")
+                            used_fallback = result.get("used_fallback", False)
                     elif result.get("error") and not first_error:
                         first_error = result["error"]
 
@@ -379,10 +493,18 @@ class ImageGenerator:
             if request.preview and not request.no_preview:
                 await self._handle_preview(generated_files)
 
+            # 建立回應訊息
+            message = f"Successfully generated {len(generated_files)} image variation(s)"
+            if used_fallback:
+                message += f" (使用備用模型: {model_used}，原本: {self.model_name})"
+
             return ImageGenerationResponse(
                 success=True,
-                message=f"Successfully generated {len(generated_files)} image variation(s)",
+                message=message,
                 generated_files=generated_files,
+                model_used=model_used,
+                used_fallback=used_fallback,
+                primary_model=self.model_name if used_fallback else None,
             )
 
         except Exception as e:
@@ -416,7 +538,7 @@ class ImageGenerator:
             ext = file_path.lower().split(".")[-1]  # type: ignore
             mime_type = "image/png" if ext == "png" else "image/jpeg"
 
-            response = await self._call_gemini_api(
+            response, model_used, used_fallback = await self._call_gemini_api(
                 prompt=request.prompt,
                 resolution=request.resolution,
                 aspect_ratio=request.aspect_ratio,
@@ -453,10 +575,18 @@ class ImageGenerator:
             if request.preview and not request.no_preview:
                 await self._handle_preview([file_path])
 
+            # 建立回應訊息
+            message = f"Successfully {request.mode}d image"
+            if used_fallback:
+                message += f" (使用備用模型: {model_used}，原本: {self.model_name})"
+
             return ImageGenerationResponse(
                 success=True,
-                message=f"Successfully {request.mode}d image",
+                message=message,
                 generated_files=[file_path],
+                model_used=model_used,
+                used_fallback=used_fallback,
+                primary_model=self.model_name if used_fallback else None,
             )
 
         except Exception as e:
@@ -528,7 +658,7 @@ class ImageGenerator:
                     step_prompt += f", {transition} transition from previous step"
 
                 try:
-                    response = await self._call_gemini_api(
+                    response, model_used, used_fallback = await self._call_gemini_api(
                         prompt=step_prompt,
                         resolution=request.resolution,
                         aspect_ratio=request.aspect_ratio,
@@ -556,10 +686,19 @@ class ImageGenerator:
                     )
 
                     file_path = save_image_buffer(image_data, str(output_dir), filename)
-                    return {"success": True, "file_path": file_path, "index": step_index}
+                    return {
+                        "success": True,
+                        "file_path": file_path,
+                        "index": step_index,
+                        "model_used": model_used,
+                        "used_fallback": used_fallback,
+                    }
 
                 except Exception as e:
                     return {"success": False, "error": str(e), "index": step_index}
+
+            model_used: str | None = None
+            used_fallback: bool = False
 
             # 批次處理
             for i in range(0, steps, parallel_count):
@@ -571,6 +710,10 @@ class ImageGenerator:
                     idx = result.get("index", 0)
                     if result["success"] and result.get("file_path"):
                         generated_files[idx] = result["file_path"]
+                        # 記錄 fallback 資訊（取第一個成功的結果）
+                        if model_used is None:
+                            model_used = result.get("model_used")
+                            used_fallback = result.get("used_fallback", False)
                     elif result.get("error") and not first_error:
                         first_error = result["error"]
 
@@ -593,11 +736,16 @@ class ImageGenerator:
                 if was_complete
                 else f"Generated {len(completed_files)} out of {steps} requested {story_type} steps"
             )
+            if used_fallback:
+                message += f" (使用備用模型: {model_used}，原本: {self.model_name})"
 
             return ImageGenerationResponse(
                 success=True,
                 message=message,
                 generated_files=completed_files,
+                model_used=model_used,
+                used_fallback=used_fallback,
+                primary_model=self.model_name if used_fallback else None,
             )
 
         except Exception as e:
