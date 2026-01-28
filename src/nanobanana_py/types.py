@@ -80,7 +80,9 @@ class GenerateImageArgs(BaseModel):
     format: OutputFormat = Field(default="separate", description="輸出格式：grid 或 separate")
     seed: int | None = Field(default=None, description="隨機種子")
     preview: bool = Field(default=False, description="自動預覽")
+    no_preview: bool = Field(default=False, description="強制禁用預覽")
     resolution: ImageResolution = Field(default="1K", description="解析度：1K, 2K, 4K")
+    parallel: int = Field(default=2, ge=1, le=8, description="平行生成數量（1-8）")
 
 
 class EditImageArgs(BaseModel):
@@ -91,6 +93,8 @@ class EditImageArgs(BaseModel):
     filename: str | None = Field(default=None, description="輸出檔名")
     resolution: ImageResolution = Field(default="1K", description="解析度")
     preview: bool = Field(default=False, description="自動預覽")
+    no_preview: bool = Field(default=False, description="強制禁用預覽")
+    parallel: int = Field(default=2, ge=1, le=8, description="平行生成數量（1-8）")
 
 
 class RestoreImageArgs(BaseModel):
@@ -101,6 +105,8 @@ class RestoreImageArgs(BaseModel):
     filename: str | None = Field(default=None, description="輸出檔名")
     resolution: ImageResolution = Field(default="1K", description="解析度")
     preview: bool = Field(default=False, description="自動預覽")
+    no_preview: bool = Field(default=False, description="強制禁用預覽")
+    parallel: int = Field(default=2, ge=1, le=8, description="平行生成數量（1-8）")
 
 
 class GenerateIconArgs(BaseModel):
@@ -123,6 +129,8 @@ class GenerateIconArgs(BaseModel):
     corners: Literal["rounded", "sharp"] = Field(default="rounded", description="圓角")
     resolution: ImageResolution = Field(default="1K", description="解析度")
     preview: bool = Field(default=False, description="自動預覽")
+    no_preview: bool = Field(default=False, description="強制禁用預覽")
+    parallel: int = Field(default=2, ge=1, le=8, description="平行生成數量（1-8）")
 
 
 class GeneratePatternArgs(BaseModel):
@@ -143,6 +151,8 @@ class GeneratePatternArgs(BaseModel):
     repeat: Literal["tile", "mirror"] = Field(default="tile", description="重複方式")
     resolution: ImageResolution = Field(default="1K", description="解析度")
     preview: bool = Field(default=False, description="自動預覽")
+    no_preview: bool = Field(default=False, description="強制禁用預覽")
+    parallel: int = Field(default=2, ge=1, le=8, description="平行生成數量（1-8）")
 
 
 class GenerateStoryArgs(BaseModel):
@@ -163,6 +173,8 @@ class GenerateStoryArgs(BaseModel):
     format: Literal["storyboard", "individual"] = Field(default="individual", description="格式")
     resolution: ImageResolution = Field(default="1K", description="解析度")
     preview: bool = Field(default=False, description="自動預覽")
+    no_preview: bool = Field(default=False, description="強制禁用預覽")
+    parallel: int = Field(default=2, ge=1, le=8, description="平行生成數量（1-8）")
 
 
 class GenerateDiagramArgs(BaseModel):
@@ -187,3 +199,5 @@ class GenerateDiagramArgs(BaseModel):
     annotations: Literal["minimal", "detailed"] = Field(default="detailed", description="標註")
     resolution: ImageResolution = Field(default="1K", description="解析度")
     preview: bool = Field(default=False, description="自動預覽")
+    no_preview: bool = Field(default=False, description="強制禁用預覽")
+    parallel: int = Field(default=2, ge=1, le=8, description="平行生成數量（1-8）")

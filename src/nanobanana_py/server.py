@@ -76,7 +76,9 @@ async def generate_image(
     format: str = "separate",
     seed: int | None = None,
     preview: bool = False,
+    no_preview: bool = False,
     resolution: str = "1K",
+    parallel: int = 2,
 ) -> str:
     """
     Generate single or multiple images from text prompts with style and variation options.
@@ -91,7 +93,9 @@ async def generate_image(
         format: Output format: separate files or single grid image (grid, separate)
         seed: Seed for reproducible variations
         preview: Automatically open generated images in default viewer
+        no_preview: Explicitly disable auto-preview even when preview=True
         resolution: Output image resolution (1K, 2K, 4K)
+        parallel: Number of images to generate in parallel (1-8, default: 2)
     """
     try:
         generator = get_generator()
@@ -106,7 +110,9 @@ async def generate_image(
             format=format,  # type: ignore
             seed=seed,
             preview=preview,
+            no_preview=no_preview,
             resolution=resolution,  # type: ignore
+            parallel=parallel,
             mode="generate",
         )
 
@@ -143,6 +149,8 @@ async def edit_image(
     filename: str | None = None,
     resolution: str = "1K",
     preview: bool = False,
+    no_preview: bool = False,
+    parallel: int = 2,
 ) -> str:
     """
     Edit an existing image based on a text prompt.
@@ -153,6 +161,8 @@ async def edit_image(
         filename: Optional output filename for the edited image
         resolution: Output image resolution (1K, 2K, 4K)
         preview: Automatically open generated images in default viewer
+        no_preview: Explicitly disable auto-preview even when preview=True
+        parallel: Number of images to generate in parallel (1-8, default: 2)
     """
     try:
         generator = get_generator()
@@ -163,6 +173,8 @@ async def edit_image(
             filename=filename,
             resolution=resolution,  # type: ignore
             preview=preview,
+            no_preview=no_preview,
+            parallel=parallel,
             mode="edit",
         )
 
@@ -198,6 +210,8 @@ async def restore_image(
     filename: str | None = None,
     resolution: str = "1K",
     preview: bool = False,
+    no_preview: bool = False,
+    parallel: int = 2,
 ) -> str:
     """
     Restore or enhance an existing image.
@@ -208,6 +222,8 @@ async def restore_image(
         filename: Optional output filename for the restored image
         resolution: Output image resolution (1K, 2K, 4K)
         preview: Automatically open generated images in default viewer
+        no_preview: Explicitly disable auto-preview even when preview=True
+        parallel: Number of images to generate in parallel (1-8, default: 2)
     """
     try:
         generator = get_generator()
@@ -218,6 +234,8 @@ async def restore_image(
             filename=filename,
             resolution=resolution,  # type: ignore
             preview=preview,
+            no_preview=no_preview,
+            parallel=parallel,
             mode="restore",
         )
 
@@ -259,6 +277,8 @@ async def generate_icon(
     corners: str = "rounded",
     resolution: str = "1K",
     preview: bool = False,
+    no_preview: bool = False,
+    parallel: int = 2,
 ) -> str:
     """
     Generate app icons, favicons, and UI elements in multiple sizes and formats.
@@ -275,6 +295,8 @@ async def generate_icon(
         corners: Corner style for app icons (rounded, sharp)
         resolution: Output image resolution (1K, 2K, 4K)
         preview: Automatically open generated images in default viewer
+        no_preview: Explicitly disable auto-preview even when preview=True
+        parallel: Number of images to generate in parallel (1-8, default: 2)
     """
     try:
         generator = get_generator()
@@ -304,6 +326,8 @@ async def generate_icon(
             aspect_ratio="1:1",  # type: ignore
             resolution=resolution,  # type: ignore
             preview=preview,
+            no_preview=no_preview,
+            parallel=parallel,
             mode="generate",
         )
 
@@ -364,6 +388,8 @@ async def generate_pattern(
     repeat: str = "tile",
     resolution: str = "1K",
     preview: bool = False,
+    no_preview: bool = False,
+    parallel: int = 2,
 ) -> str:
     """
     Generate seamless patterns and textures for backgrounds and design elements.
@@ -380,6 +406,8 @@ async def generate_pattern(
         repeat: Tiling method for seamless patterns (tile, mirror)
         resolution: Output image resolution (1K, 2K, 4K)
         preview: Automatically open generated images in default viewer
+        no_preview: Explicitly disable auto-preview even when preview=True
+        parallel: Number of images to generate in parallel (1-8, default: 2)
     """
     try:
         generator = get_generator()
@@ -397,6 +425,8 @@ async def generate_pattern(
             output_count=1,
             resolution=resolution,  # type: ignore
             preview=preview,
+            no_preview=no_preview,
+            parallel=parallel,
             mode="generate",
         )
 
@@ -438,6 +468,8 @@ async def generate_story(
     format: str = "individual",
     resolution: str = "1K",
     preview: bool = False,
+    no_preview: bool = False,
+    parallel: int = 2,
 ) -> str:
     """
     Generate a sequence of related images that tell a visual story or show a process.
@@ -454,6 +486,8 @@ async def generate_story(
         format: Output format (storyboard, individual)
         resolution: Output image resolution (1K, 2K, 4K)
         preview: Automatically open generated images in default viewer
+        no_preview: Explicitly disable auto-preview even when preview=True
+        parallel: Number of images to generate in parallel (1-8, default: 2)
     """
     try:
         generator = get_generator()
@@ -465,6 +499,8 @@ async def generate_story(
             output_count=steps,
             resolution=resolution,  # type: ignore
             preview=preview,
+            no_preview=no_preview,
+            parallel=parallel,
             mode="generate",
         )
 
@@ -511,6 +547,8 @@ async def generate_diagram(
     annotations: str = "detailed",
     resolution: str = "1K",
     preview: bool = False,
+    no_preview: bool = False,
+    parallel: int = 2,
 ) -> str:
     """
     Generate technical diagrams, flowcharts, and architectural mockups.
@@ -527,6 +565,8 @@ async def generate_diagram(
         annotations: Label and annotation level (minimal, detailed)
         resolution: Output image resolution (1K, 2K, 4K)
         preview: Automatically open generated images in default viewer
+        no_preview: Explicitly disable auto-preview even when preview=True
+        parallel: Number of images to generate in parallel (1-8, default: 2)
     """
     try:
         generator = get_generator()
@@ -544,6 +584,8 @@ async def generate_diagram(
             output_count=1,
             resolution=resolution,  # type: ignore
             preview=preview,
+            no_preview=no_preview,
+            parallel=parallel,
             mode="generate",
         )
 
