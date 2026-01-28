@@ -17,11 +17,12 @@ class TestGetOutputDirectory:
     """測試 get_output_directory"""
 
     def test_default_directory(self, monkeypatch, temp_dir):
-        """預設使用當前目錄"""
+        """預設使用當前目錄下的 nanobanana-output 子目錄"""
         monkeypatch.delenv("NANOBANANA_OUTPUT_DIR", raising=False)
         monkeypatch.chdir(temp_dir)
         result = get_output_directory()
-        assert result == temp_dir
+        assert result == temp_dir / "nanobanana-output"
+        assert result.exists()  # 應該自動建立
 
     def test_custom_directory(self, monkeypatch, temp_dir):
         """使用環境變數指定的目錄"""
