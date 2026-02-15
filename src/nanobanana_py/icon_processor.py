@@ -65,7 +65,7 @@ def process_icon_file(
     if overwrite:
         output_path = input_path.with_suffix(f".{ext}")
     else:
-        output_path = input_path.with_stem(f"{input_path.stem}_{size}x{size}").with_suffix(f".{ext}")
+        output_path = input_path.parent / f"{input_path.stem}_{size}x{size}.{ext}"
 
     # 儲存
     save_format = "JPEG" if output_format == "jpeg" else "PNG"
